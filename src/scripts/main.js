@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 'use strict';
 
 let leftClick = false;
@@ -5,19 +6,23 @@ let rightClick = false;
 
 const firstPromise = new Promise((resolve, reject) => {
   let resolved = false;
+  let timeoutId;
 
   const handleLeftClick = (e) => {
     if (e.button === 0 && !resolved) {
       resolved = true;
-      resolve('First promise was resolved');
+      clearTimeout(timeoutId);
       document.removeEventListener('mousedown', handleLeftClick);
+      resolve('First promise was resolved');
     }
   };
 
   document.addEventListener('mousedown', handleLeftClick);
 
-  setTimeout(() => {
+  timeoutId = setTimeout(() => {
     if (!resolved) {
+      resolved = true;
+      document.removeEventListener('mousedown', handleLeftClick);
       // eslint-disable-next-line prefer-promise-reject-errors
       reject('First promise was rejected');
     }
@@ -36,33 +41,31 @@ const secondPromise = new Promise((resolve) => {
 });
 
 const thirdPromise = new Promise((resolve) => {
-  const checkBothClicks = () => {
-    if (leftClick && rightClick) {
-      resolve('Third promise was resolved');
-    }
-  };
-
-  const handleClick = (e) => {
+  const handleBothClicks = (e) => {
     if (e.button === 0) {
       leftClick = true;
     } else if (e.button === 2) {
       rightClick = true;
     }
-    checkBothClicks();
+
+    if (leftClick && rightClick) {
+      document.removeEventListener('mousedown', handleBothClicks);
+      resolve('Third promise was resolved');
+    }
   };
 
-  document.addEventListener('mousedown', handleClick);
+  document.addEventListener('mousedown', handleBothClicks);
 });
 
 document.addEventListener('contextmenu', (e) => {
   e.preventDefault();
 });
 
-function showNotification(message, inSuccess) {
+function showNotification(message, isSuccess) {
   const div = document.createElement('div');
 
   div.setAttribute('data-qa', 'notification');
-  div.className = inSuccess ? 'success' : 'error';
+  div.className = isSuccess ? 'success' : 'error';
   div.textContent = message;
   document.body.appendChild(div);
 }
